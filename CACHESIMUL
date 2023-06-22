@@ -1,0 +1,382 @@
+
+
+#define _CRT_SECURE_NO_WARNINGS
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <math.h>
+#define CACHE_SIZE 1048576
+typedef struct dat {
+	char pro;
+	int addr;		
+	int dum;
+}dat;
+// gcc.trace의 내용
+dat* read_g(dat* d, int n) {
+	FILE* fp = NULL;
+	if (0 != fopen_s(&fp, "gcc.trace", "r")) {
+		printf("열기 오류");
+		return NULL;
+	}
+	dat * a; //동적 메모리 생성
+	a = (dat*)calloc(n,sizeof(dat));  
+	if (a == NULL) {
+		printf("메모리 할당 오류");
+		return NULL;
+	}
+	for (int i = 0; i < n; i++) {
+		fscanf(fp, "%c %lx %d ", &a[i].pro, &a[i].addr, &a[i].dum); //%c %lx %d 가 계속 오류가 나서 %c %lx %d' '  공백 하나 늘리니까 해결됨. ??
+	}
+	fclose(fp);
+	d = a;
+	return d;
+
+}
+//데이터 화면 출력
+void prin(dat* a,int n) {
+	for (int i = 0; i < n; i++) {
+		printf("%c %lx %d\n", a[i].pro, a[i].addr, a[i].dum);
+	}
+}
+
+
+//캐시 구조 형성 직접
+typedef struct direc {
+	int tag_di;  //태그 비트수 20
+	int line_di;  //라인 비트수 8        //배열로 라인을 표현하기에 지워도 되지만, 직접 사상캐시임을 확실히 하기 위해 남겨둠
+}direc;
+
+
+
+
+
+//주기억장치 주소 28비트 
+//바이트 단위 주소로 가정하자.
+//블록수는 인자로 받는다 2^28 / b = 블록 크기(바이트) // 캐시 용량은 65536  2^16 바이트로 가정
+void direct(int b,dat *a, int n) {      // 블록 수, 주소필드, 검사를 몇번 반복할지 
+	int block_size =pow(2,28) /b; // 캐시 라인 크기와동일					== 블록수
+	int line_num = CACHE_SIZE / block_size;
+	printf("블록 수 = %d\n", b);
+	printf("블록 사이즈 = %d\n", block_size);
+	printf("캐쉬 사이즈 = %d\n", CACHE_SIZE);
+	printf("라인 수 = %d\n",line_num); // 라인 수는 블록수가 2^20 개일때 256개가 된다.
+	int hit = 0;
+	direc* dir = (direc*)malloc(line_num * sizeof(direc));
+	if (dir == NULL) { printf("직접 메모리 오류"); return; }
+	for (int i = 0; i < n; i++) {
+		int ln = a[i].addr % line_num; //라인
+		int tg = a[i].addr / line_num; //태그
+		if (dir[ln].tag_di == tg) {
+			// hit 발생
+			hit++;
+		}
+		else {
+			// miss 발생
+			dir[ln].tag_di = tg;
+		}
+	}
+	
+	printf("직접 사상 수행 결과 \n%d 번 수행 중 %d 번 히트 했음", n, hit);
+	free(dir);
+}
+
+
+
+
+//완전
+typedef struct com {
+	int tag_com;
+	int log;			//히트 될때마다 카운터처럼 사용할 용도
+}comple;
+
+
+// 완전 연관 사상,fifo
+void comfifo(dat* a, int n) {      // 주소필드, 검사를 몇번 반복할지 
+	int b = 1;																	//완전 연관 사상은 블록이 하나다.
+	int line_num = 256;			//라인 수는 직접 사상과 동일하게 한다.
+	printf("블록 수 = %d\n", b);
+	printf("캐쉬 사이즈 = %d\n", CACHE_SIZE);
+	printf("라인 수 = %d\n", line_num); // 라인 수는 블록수가 2^20 개일때 256개가 된다.
+	int hit = 0;
+	int cnt =0;
+	int time = 0;
+	int flag = 0;
+	int addition = 0; // 미스일때 캐쉬에 데이터를 추가하기위한 변수
+	comple * comp = (comple*)calloc(line_num,sizeof(comple));   // 동적 메모리 ,0으로 초기화
+	
+	if (comp == NULL) { printf("직접 메모리 오류"); return; }
+
+	for (int i = 0; i < line_num; i++) {
+		comp[i].tag_com = 0;  // 태그 필드 초기화
+		comp[i].log = 0;      // 로그 필드 초기화
+	}
+	for (int i = 0; i < n; i++) {
+		int tg = a[i].addr;
+		cnt = 0;
+		// 히트인지 미스인지 탐색
+		flag = 0;
+		for (int j = 0; j < line_num; j++) {
+			if (comp[j].tag_com == tg) {  // 히트일 경우
+				hit++;
+				flag = 1;
+				break;
+			}
+		}
+		if (flag == 0) {
+			addition = addition % line_num;
+			comp[addition].tag_com = tg;                //가장 오래된 데이터 
+			addition++;
+		}
+	}
+	free(comp);
+	printf("완전 연관 사상 수행 결과 \n%d 번 수행 중 %d 번 히트 했음", n, hit);
+	}
+
+// 완전 연관 사상,lru
+void comlru(dat* a, int n) {      // 주소필드, 검사를 몇번 반복할지 
+	int b = 1;																	//완전 연관 사상은 블록이 하나다.
+	int line_num = 256;			//라인 수는 직접 사상과 동일하게 한다.
+	printf("블록 수 = %d\n", b);
+	printf("캐쉬 사이즈 = %d\n", CACHE_SIZE);
+	printf("라인 수 = %d\n", line_num); // 라인 수는 블록수가 2^20 개일때 256개가 된다.
+	int hit = 0;
+	int cnt = 0;
+	int time = 0;
+	int flag = 0;
+	int log_cnt = 0;
+	comple* comp = (comple*)calloc(line_num, sizeof(comple));   // 동적 메모리 ,0으로 초기화
+	if (comp == NULL) { printf("직접 메모리 오류"); return; }
+	for (int i = 0; i < line_num; i++) {
+		comp[i].tag_com = 0;  // 태그 필드 초기화
+		comp[i].log = 0;      // 로그 필드 초기화
+	}
+
+	for (int i = 0; i < n; i++) {
+		int tg = a[i].addr;
+		cnt = 0;
+		// 히트인지 미스인지 탐색
+		flag = 0;
+		for (int j = 0; j < line_num; j++) {
+			if (comp[j].tag_com == tg) {  // 히트일 경우
+				hit++;
+				comp[j].log = log_cnt++;			//log 값을 히트 할때마다 갱신, 가장 작은 log 값을 가진 태그가 LRU 교환 대상임
+				flag = 1;
+				break;
+			}
+		}
+		if (flag == 0) {
+			int tmp = comp[0].log;		//단순 반복문을 통해 가장 작은 로그값 찾고 이를 수정할 계획
+			for (int k = 1; k < line_num; k++) {
+				if (tmp > comp[k].log) {
+					tmp = comp[k].log;
+				}
+			}
+			for (int k = 0; k < line_num; k++) {
+				if (tmp == comp[k].log) {
+					comp[k].tag_com = tg;
+					break;
+				}
+			}
+		}
+	}
+	free(comp);
+	printf("완전 연관 사상 수행 결과 \n%d 번 수행 중 %d 번 히트 했음", n, hit);
+}
+
+
+
+//세트
+typedef struct set {
+	int tag_set;
+	int set_set;									//n-way 세트의 경우 태그와 세트 모두 n개로 늘리면 위와 같이 배열만으로 구현이 가능하겠지만 n 이 정해진 상수가 아닌 변수이므로 구현하기 어려웠다.
+	int log;
+}set;
+
+
+void setfifo(int b, dat* a, int set_num, int n) {      // 블록 수, 주소필드, 세트수 ,  검사를 몇번 반복할지 
+	int block_size = pow(2, 28) / b; // 캐시 라인 크기와동일					== 블록수
+	int line_num = CACHE_SIZE / block_size / set_num;   //세트당 라인 수 
+	printf("블록 수 = %d\n", b);
+	printf("블록 사이즈 = %d\n", block_size);
+	printf("캐쉬 사이즈 = %d\n", CACHE_SIZE);
+	printf("라인 수 = %d\n", line_num); 
+	int hit = 0;
+	int flag = 0;
+	int limit = 0;						//해당 방식으로 구현시 같은 세트의 데이터가 set_num 의 수를 넘길 수 있기때문에 이에 제한을 두기위한 일종의 플래그
+	int log_cnt = 1;					//비어있는 캐시를 찾기위한 변수
+	int tmpj = 0;
+
+	set* sett = (set*)malloc(line_num * set_num * sizeof(set));   //구조체 배열로 세트 번호를 매칭시켰었지만,		세트 연관 사상에서는 세트 구조체 내의 set_set 로 매칭시켜 해결하려 한다.
+	for (int i = 0; i < line_num; i++) {
+		sett[i].log = 0;  // 태그 필드 초기화
+		sett[i].set_set = 0;      // 로그 필드 초기화
+		sett[i].tag_set = 0;
+	}
+
+	if (sett == NULL) { printf("직접 메모리 오류"); return; }
+	for (int i = 0; i < n; i++) {
+		int ln = a[i].addr % line_num; //세트
+		int tg = a[i].addr / line_num; //태그
+		for (int j = 0; j < line_num * set_num; j++) {
+			if (ln == sett[j].set_set && tg == sett[j].tag_set) {
+				hit++;			//히트 일 경우
+				flag = 1;
+				break;
+			}
+		}
+		if (flag == 0) {
+			for (int j = 0; j < line_num * set_num; j++) {
+				if (ln == sett[j].set_set) {
+					limit++;
+
+				}
+			}
+			switch (limit) {
+			case 0:				//캐쉬 어딘가 비어있다는 말이므로 초기화한 값'0'을 찾아 데이터를 넣으면 비어있는 어딘가에 들어간다.
+				for (int j = 0; j < line_num * set_num; j++) {
+					if (sett[j].log == 0) { //값이 들어있다면 1보다 큰 로그 값을 가지게 했다.
+						sett[j].set_set = ln;
+						sett[j].tag_set = tg;
+						sett[j].log = log_cnt++;
+						break;
+					}
+				}
+
+
+			case 1:				//캐쉬 어딘가 비어있다는 말이므로 초기화한 값'0'을 찾아 데이터를 넣으면 비어있는 어딘가에 들어간다.
+				for (int j = 0; j < line_num * set_num; j++) {
+					if (sett[j].log == 0) { //값이 들어있다면 1보다 큰 로그 값을 가지게 했다.
+						sett[j].set_set = ln;
+						sett[j].tag_set = tg;
+						sett[j].log = log_cnt++;
+						break;
+					}
+				}
+			case 2:				//해당 세트는 모두 차있으므로 세트 내의 값을 비교하여 값을 교환한다.
+
+				for (int j = 0; j < line_num * set_num; j++) {
+					if (sett[j].set_set == ln) {
+						int tmp = sett[j].log;
+						tmpj = j;
+						break;
+					}
+				}
+				for (int j = tmpj; j < line_num * set_num; j++) {
+					if (sett[j].set_set == ln && sett[j].set_set > sett[tmpj].set_set) {			//로그 값이 더 작은 값을 교환
+						sett[tmpj].tag_set = tg;
+						sett[tmpj].log = log_cnt++;
+					}
+					else {
+						sett[j].tag_set = tg;
+						sett[j].log = log_cnt++;
+					}
+					break;
+
+				}
+
+				
+			}
+		}
+	}
+	printf("세트 연관 사상 수행 결과 \n % d 번 수행 중 % d 번 히트 했음", n, hit);
+	free(sett);
+}
+
+void setlru(int b, dat* a, int set_num, int n) {      // 블록 수, 주소필드, 세트수 ,  검사를 몇번 반복할지 
+	int block_size = pow(2, 28) / b; // 캐시 라인 크기와동일	
+	int line_num = CACHE_SIZE /block_size / set_num;   //세트당 라인 수 
+	printf("블록 수 = %d\n", b);
+	printf("블록 사이즈 = %d\n", block_size);
+	printf("캐쉬 사이즈 = %d\n", CACHE_SIZE);
+	printf("라인 수 = %d\n", line_num);
+	int hit = 0;
+	int flag = 0;
+	int limit = 0;						//해당 방식으로 구현시 같은 세트의 데이터가 set_num 의 수를 넘길 수 있기때문에 이에 제한을 두기위한 일종의 플래그
+	int log_cnt = 1;					//비어있는 캐시를 찾기위한 변수
+	int tmpj = 0;
+
+	set* sett = (set*)malloc(line_num * set_num * sizeof(set));   //구조체 배열로 세트 번호를 매칭시켰었지만,		세트 연관 사상에서는 세트 구조체 내의 set_set 로 매칭시켜 해결하려 한다.
+	for (int i = 0; i < line_num; i++) {
+		sett[i].log = 0;  // 태그 필드 초기화
+		sett[i].set_set = 0;      // 로그 필드 초기화
+		sett[i].tag_set = 0;
+	}
+
+	if (sett == NULL) { printf("직접 메모리 오류"); return; }
+	for (int i = 0; i < n; i++) {
+		int ln = a[i].addr % line_num; //세트
+		int tg = a[i].addr / line_num; //태그
+		for (int j = 0; j < line_num * set_num; j++) {
+			if (ln == sett[j].set_set && tg == sett[j].tag_set) {
+				hit++;			//히트 일 경우
+				flag = 1;
+				sett[j].log = log_cnt;
+				break;
+			}
+		}
+		if (flag == 0) {
+			for (int j = 0; j < line_num * set_num; j++) {
+				if (ln == sett[j].set_set) {
+					limit++;
+
+				}
+			}
+			switch (limit) {
+			case 0:				//세트가 비어있다는 말이므로 초기화한 값'0'을 찾아 데이터를 넣으면 비어있는 어딘가에 들어간다.
+				for (int j = 0; j < line_num * set_num; j++) {
+					if (sett[j].log == 0) { //값이 들어있다면 1보다 큰 로그 값을 가지게 했다.
+						sett[j].set_set = ln;
+						sett[j].tag_set = tg;
+						sett[j].log = log_cnt++;
+						break;
+					}
+				}
+
+
+			case 1:				//세트 어딘가 비어있다는 말이므로 초기화한 값'0'을 찾아 데이터를 넣으면 비어있는 어딘가에 들어간다.
+				for (int j = 0; j < line_num * set_num; j++) {
+					if (sett[j].log == 0) { //값이 들어있다면 1보다 큰 로그 값을 가지게 했다.
+						sett[j].set_set = ln;
+						sett[j].tag_set = tg;
+						sett[j].log = log_cnt++;
+						break;
+					}
+				}
+			case 2:				//해당 세트는 모두 차있으므로 세트 내의 값을 비교하여 값을 교환한다.
+
+				for (int j = 0; j < line_num * set_num; j++) {
+					if (sett[j].set_set == ln) {
+						int tmp = sett[j].log;
+						tmpj = j;
+						break;
+					}
+				}
+				for (int j = tmpj; j < line_num * set_num; j++) {
+					if (sett[j].set_set == ln && sett[j].set_set > sett[tmpj].set_set) {			//로그 값이 더 작은 값을 교환
+						sett[tmpj].tag_set = tg;
+						sett[tmpj].log = log_cnt++;
+					}
+					else {
+						sett[j].tag_set = tg;
+						sett[j].log = log_cnt++;
+					}
+					break;
+
+				}
+
+
+			}
+		}
+	}
+	printf("세트 연관 사상 수행 결과 \n % d 번 수행 중 % d 번 히트 했음", n, hit);
+	free(sett);
+}
+
+
+//블록 수는 2^20 개로 가정
+int main() {
+	dat* d = NULL;
+	d = read_g(d, 500);
+	direct(1048576, d, 800);
+
+}
