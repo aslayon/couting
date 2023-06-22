@@ -1,0 +1,73 @@
+//1.  C program 4 : Set
+
+//1) 프로그램에  int dataA[10], dataB[20] 를 선언
+
+//2) 화면에서 30개의 정수를 입력한 후 화면에 그 수들을 보인다.
+
+//3) 화면에서 1개의 정수를 입력 받아, 그 수가 1 이면 dataA와 dataB 의 AND 를 2 이면 OR 집합 연산 결과를 화면에 출력하라.
+
+//4) 0 이 입력 될 때까지 반복한다.
+
+//5) 0 이면 종료.
+#include <stdio.h>
+
+
+void logic() {
+	int dataA[10], dataB[20];
+	int k = 3, tmp, cnt = 0, AND[10] = { 0 }, OR[30] = { 0 };
+	for (int i = 0; i < 10; i++) {
+		printf("A의 %d번째 정수 입력\n", i + 1);
+		scanf("%d", &dataA[i]);
+	}
+	for (int i = 0; i < 20; i++) {
+		printf("B의 %d번째 정수 입력\n", i + 1);
+		scanf("%d", &dataB[i]);
+	}
+	do {
+		printf("정수 1 -> AND 정수 2 -> OR 정수 0 -> end\n");
+		scanf("%d", &k);
+		if (k == 1) {
+			cnt = 0;
+			for (int i = 0; i < 10; i++) {
+				for (int j = 0; j < 20; j++) {
+					if (dataA[i] == dataB[j]) {
+						AND[cnt] = dataA[i];
+						cnt++;
+					}
+				}
+			}
+			printf("AND = ");
+			for (int i = 0; i < cnt; i++) {
+				printf(" %d", AND[i]);
+			}
+			printf("\n");
+		}
+		else if(k == 2) {
+			cnt = 0;
+			for (int i = 0; i < 20; i++) {
+				OR[cnt] = dataB[i];
+				cnt++;
+			}
+			for (int i = 0; i < 10; i++) {
+				for (int j = 0; j < 20; j++) {
+					if (dataA[i] == dataB[j])
+						break;
+					if (j == 19) {
+						OR[cnt] = dataA[i];
+						cnt++;
+					}
+				}
+			}
+			printf("OR = ");
+			for (int i = 0; i < cnt; i++) {
+				printf("%d\t", OR[i]);
+			}printf("\n");
+		}
+	} while (k != 0);
+
+}
+
+int main() {
+	logic();
+	return;
+}
