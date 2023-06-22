@@ -1,0 +1,51 @@
+#define _CRT_SECURE_NO_WARNINGS
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+
+//1.  C program 7
+
+//1) 프로그램에  char data[10] 를 선언
+
+//2) 화면에서 10개의 영어 단어를 입력한 후 화면에 그 단어들을 보인다.
+
+//3) 화면에서 1개의 단어를 입력 받아, 그 단어가 10개중 몇 번째인지 출력하라.
+
+//4) 없으면 "No exist!!!"를 출력하라.
+
+//5) 3)과 4)를 0 이 입력 될 때까지 반복한다.
+
+//6) 0 이면 종료.
+
+
+
+//-프로그램 코드와 실행 결과(화면 캡쳐)를 제출한다.
+
+int main() {
+	char data[10][20];
+	char a[20] = "";
+	int ct = 0;
+	for (int i = 0; i < 10; i++) {
+		printf("%d번째 단어 입력\n", i + 1);
+		scanf("%s", &data[i]);
+	}
+	for (int i = 0; i < 10; i++) {
+		printf(" %s, ", data[i]);
+	}
+
+	while (1){            //계속 반복
+		ct = 0;
+		printf("\n찾을 단어 입력\n");
+		scanf("%s", a);
+		for (int t = 0; t < 10; t++) {
+			if (strcmp(a,data[t])==0) {						////strcmp(a,b) 같으면 0 a<b= 1 // a>b =2
+				printf("%d 번째에 저장되어 있습니다.\n", t + 1);
+				ct = ct + 1;
+			}
+		}
+		if (strcmp(a, "0") == 0) { printf("종료"); break; }
+		if (ct == 0) printf("No exist!!!\n");
+	}		
+	return 0;
+}
