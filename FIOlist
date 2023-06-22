@@ -1,0 +1,85 @@
+#define _CRT_SECURE_NO_WARNINGS
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#define max 40
+//아래 조건을 만족하는 C 프로그램을 작성하세요.
+
+
+
+//학생의 정보는[학번, 이름, 중간, 기말]로 student.txt 파일로 주어진다.
+
+//입력 파일에서 전체 학생의 정보를 읽어 구조체 배열에 저장한 후 각 학생 별 평균 점수를 구하고 전체 학생의 평균 점수와 표준 편차를 구하는 프로그램을 작성하라.학생 수는 최대 40명으로 필요한 수 만큼만 메모리를 동적할당하여 처리한다.
+
+
+
+//* 프로그램 소스 코드(Github 링크로 대체 가능)와 별도의 보고서(실행 결과 및 분석 포함)를 제출할 것.
+
+//구조체 선언
+struct Data {
+	char id[20];
+	char name[20];
+	int mid;
+	int end;
+};
+
+//student.txt를 생성하는 코드
+int create() {
+	int cnt = 0;  //입력된 구조체 수 
+	int b = 0;
+	struct Data a[40] = { 0 }; //구조체 선언 및 초기화
+	for (int i = 0; i < max; i++) {
+		printf("학생 학번은?\n");//구조체 내용 채우기
+		scanf("%s", a[i].id);
+		printf("학생 이름은?\n");//구조체 내용 채우기
+		scanf("%s", a[i].name);
+		printf("학생 중간 성적은?\n");//구조체 내용 채우기
+		scanf("%d", &a[i].mid);
+		printf("학생 기말 성적은?\n");//구조체 내용 채우기
+		scanf("%d", &a[i].end);
+		cnt = cnt + 1;
+		printf("계속하려면 0, 멈추려면 1 입력\n");//종료조건
+		scanf("%d", &b);
+		if (b == 1) {
+			break; return cnt;
+		}
+	}
+		FILE* fp = 0; //파일 포인터 선언
+		fopen_s(&fp, "student.txt", "w");
+		if (fp == NULL) {
+			printf("저장 에러");
+		
+	}
+		fwrite(a, sizeof(struct Data), cnt, fp);
+		fclose(fp);
+		return cnt;
+}
+//student.txt를 읽어서 평균 구하는 함수
+void load_av(int n) {
+	int av;
+	FILE* fp = 0; //파일 포인터 선언
+	struct Data *ptr; //구조체 동적메모리 선언
+	ptr = (struct Data*)malloc((n + 1) * sizeof(struct Data));
+	if (ptr == NULL) {
+		printf("데이터 할당 오류\n");
+		exit(1);
+	}
+	fopen_s(&fp, "student.txt", "r"); //파일열기
+	if (fp == NULL) {
+		printf("열기 에러"); //열기 실패
+
+	}
+	fread(ptr, sizeof(struct Data), n, fp); //파일 불러오기
+	for (int i = 0; i < n; i++) {//평균 구해서 출력
+		av = (ptr[i].mid + ptr[i].end) / 2;
+		printf("%s의 평균 점수는 %d\n", ptr[i].name, av);
+	}
+	fclose(fp);
+	free(ptr);  //해제
+}
+int main() {
+	int a;
+	a = create();
+	printf("%d\n", a);
+	load_av(a);
+}
