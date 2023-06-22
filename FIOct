@@ -1,0 +1,74 @@
+#define _CRT_SECURE_NO_WARNINGS
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#define max 20
+//1.  C program 5 : File I / O & Max Data Search
+
+
+
+//1//) 텍스트 에디터를 이용하여 data.txt 화일에 20개의 정수를 20 줄에 기록 저장한다.
+
+//2) 프로그램에서 위 화일을 읽어 int data[20] 에 저장한다.
+
+//3) 위 data 중 가장 큰 수와 위치(INDEX)를 화면에 출력하라.
+
+//4) 위 data 20개와 가장 큰 수를 화일 dataOut.txt에 저장하라.
+
+
+//student.txt를 생성하는 코드
+
+void rtnout() {
+	FILE* fp = 0; //파일 포인터 선언
+	int maxi;
+	int tmp;
+	int a;
+	int in[max] = { 0, };
+	int out[max+1] = { 0, };
+	fopen_s(&fp, "data.txt", "r"); //파일열기
+	if (fp == NULL) {
+		printf("열기 에러"); //열기 실패
+
+	}
+	int cnt = 0;
+	while(fscanf(fp, "%d", &a) != EOF) {
+		in[cnt] = a;
+		cnt++;
+	}
+
+	maxi = in[0];
+	for (int i = 0; i < max; i++) {
+		printf("%d\n", in[i]);
+	}
+	for (int i = 1; i < max; i++) {//평균 구해서 출력
+		if (maxi < in[i]) {
+			maxi = in[i];
+		}
+	}
+	printf("가장큰 수는 ");
+	printf("%d 이며, ", maxi);
+	for (int i = 0; i < max; i++) {
+		out[i] = in[i];
+		if (maxi == in[i]) {
+			printf("%d ", i);
+		}
+	}
+	
+	out[20] = maxi;
+	printf("번째에 있습니다");
+	fclose(fp);
+	fp = 0;
+	fopen_s(&fp, "dataOut.txt", "w");
+	if (fp == NULL) {
+		printf("저장 에러");
+	}
+	for (int i = 0; i < max + 1; i++) {
+		fprintf(fp,"%d\n", out[i]);
+	}
+	fclose(fp);
+
+
+}
+int main() {
+	rtnout();
+}
