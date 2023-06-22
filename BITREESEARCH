@@ -1,0 +1,132 @@
+#define _CRT_SECURE_NO_WARNINGS
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#define max 20
+
+//1.  C program 11
+
+//1) 텍스트 에디터를 이용하여 data.txt 화일에 20개의 정수와 영문 이름을  20 줄에 기록 저장한다.
+
+//2) 프로그램에서 위 화일을 읽어 int num 과 char name[30] 두개의 변수를 멤버로 하는 20개의 구조체에
+
+//저징하고, 이를 num 크기 순서대로 정렬하고, 화면에 출력하라.
+
+//3) 정렬은 이진 트리를 사용하라.
+
+//4) 키보드에서 정수를 입력 받고, 그 단어가 있으면 몇 번째인지를, 없으면 "No Exist!!!"를 출력하라.
+
+//5) 검색은 이진 검색을 사용하라.
+
+
+
+//-프로그램 코드와 실행 결과(화면 캡쳐)를 제출한다.
+
+typedef int element;
+typedef struct id {
+	int num;
+	char name[20];
+}info;
+typedef struct TreeNode {
+	info a;
+	struct TreeNode* left, * right;
+} TreeNode;
+
+
+
+TreeNode* new_node(info s)
+{
+	TreeNode* temp = (TreeNode*)malloc(sizeof(TreeNode));
+	temp->a = s;
+	temp->left = temp->right = NULL;
+	return temp;
+}
+TreeNode* insert_node(TreeNode* node, info s)
+{
+	if (node == NULL) return new_node(s);
+	if (s.num < node->a.num)
+		node->left = insert_node(node->left, s);
+	else if (s.num>node->a.num)
+		node->right = insert_node(node->right, s);
+	return node;
+}
+
+
+
+void inorder_to_array(TreeNode* node, info * arr, int* idx)
+{
+	if (node == NULL) {
+		return;
+	}
+
+	inorder_to_array(node->left, arr, idx);
+	arr[*idx] = node->a;
+	(*idx)++;
+	inorder_to_array(node->right, arr, idx);
+}
+int find(info * out, int str, int l, int r) {
+	if (l > r) {
+		printf("No Exist!!!");
+		return -1;
+
+	}
+	int mid = (l + r) / 2;
+	if (out[mid].num == str) {
+		printf("%d 번째에 존재", mid + 1);
+		return mid;
+
+	}
+	else if (out[mid].num < str) {
+		return(find(out, str, mid + 1, r));
+	}
+	else if (out[mid].num > str) {
+		return(find(out, str, l, mid - 1));
+	}
+
+}
+void rtn() {
+	FILE* fp = 0;
+	fopen_s(&fp, "data.txt", "r");
+	if (fp == NULL) {
+		printf("읽기 오류");
+		return;
+	}
+	int cnt = 0;
+	info data[max] = { 0, };
+	info out[max] = { 0, };
+	int a = 0;
+	char c[20];
+	while (fscanf(fp, "%d %s", &a,&c) != EOF) {
+		data[cnt].num = a;
+		strcpy(data[cnt].name , c);
+		out[cnt].num = a;
+		strcpy(out[cnt].name , c);
+		cnt++;
+	}
+	for (int i = 0; i < max; i++) {
+		printf(" %d %s\n", data[i].num,data[i].name);
+	}
+
+	TreeNode* b = NULL;
+	for (int i = 0; i < max; i++) {
+		b = insert_node(b, out[i]);
+	}
+
+	printf("\n");
+	fclose(fp);
+	int str;
+	info arr[max] = { 0, };
+	int idx = 0;
+	inorder_to_array(b, arr, &idx);
+	printf("정렬 결과 : \n");
+	for (int i = 0; i < max; i++) {
+		printf(" %d %s\n", arr[i].num, arr[i].name);
+	}
+	printf("\n찾을 숫자 입력:");
+	scanf("%d", &str);
+	find(arr, str, 0, cnt - 1);
+}
+
+int main() {
+	rtn();
+}
