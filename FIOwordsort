@@ -1,0 +1,86 @@
+#define _CRT_SECURE_NO_WARNINGS
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#define max 20
+//1.  C program 9
+
+//1) 텍스트 에디터를 이용하여 data.txt 화일에 20개의 영어 단어를 20 줄에 기록 저장한다.
+
+//2) 프로그램에서 위 화일을 읽어 char data[20][30] 에 저장한다.
+
+//3) 위 data를 크기 순서대로 정렬하고, 화면에 출력하라.(bubble sort)
+
+//4) 키보드에서 단어를 입력 받고, 그 단어가 있으면 몇 번째인지를, 없으면 "No Exist!!!"를 출력하라.
+
+//5) 검색은 이진 검색을 사용하라.
+
+
+
+//-프로그램 코드와 실행 결과(화면 캡쳐)를 제출한다.
+
+int find(char out[][30], char str[][30], int l, int r) {
+	if (l > r) {
+		printf("No Exist!!!");
+		return -1;
+
+	}
+	int mid = (l + r) / 2;
+	if (strcmp(out[mid], str) == 0) {
+		printf("%d 번째에 존재", mid+1);
+		return mid;
+
+	}
+	else if (strcmp(out[mid], str) < 0) {
+		return(find(out, str, mid +1,r));
+	}
+	else if (strcmp(out[mid], str) > 0) {
+		return(find(out, str, l, mid -1));
+	}
+
+}
+void rtn() {
+	FILE* fp = 0;
+	fopen_s(&fp, "data.txt", "r");
+	if (fp == NULL) {
+		printf("읽기 오류");
+		return;
+	}
+	int cnt = 0;
+	char data[max][30] = {0,};
+	char out[max][30] = {0,};
+	char a[30];
+	while (fscanf(fp, "%s", a) != EOF) {
+		strcpy(data[cnt], a);
+		strcpy(out[cnt],a);
+		cnt++;
+	}
+	for (int i = 0; i < max; i++) {
+		printf(" %s", data[i]);
+	}
+	char tmp[30];
+	for (int i = 0; i < max; i++) {
+		for (int j = 0; j < max - 1; j++) {
+			if (strcmp(out[j],out[j+1])>0 ) {
+				strcpy(tmp , out[j]);
+				strcpy(out[j] , out[j + 1]);
+				strcpy(out[j + 1] , tmp);
+			}
+		}
+	}
+	fclose(fp);
+	fp = 0;
+	printf("\n->\n");
+	for (int i = 0; i < max; i++) {
+		printf(" %s\n", out[i]);
+	}
+	printf("찾을 문자열:");
+	char str[30];
+	scanf("%s", str);
+
+	find(out, str, 0, cnt-1);
+}
+
+int main() {
+	rtn();
+}
