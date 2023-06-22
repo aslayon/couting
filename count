@@ -1,0 +1,40 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+//1.  C program 3
+
+//1) 프로그램에  int data[10] 를 선언
+
+//2) 화면에서 10개의 정수를 입력한 후 화면에 그 수들을 보인다.
+
+//3) 화면에서 1개의 정수를 입력 받아, 그 수가 10개중 몇 번째인지 출력하라.
+
+//4) 없으면 "No exist!!!"를 출력하라.
+
+//5) 3)과 4)를 0 이 입력 될 때까지 반복한다.
+
+//6) 0 이면 종료.
+
+int main() {
+	int data[10];
+	int a, ct = 0;;
+	for (int i = 0; i < 10; i++) {
+		printf("%d번째 숫자 입력\n", i+1);
+		scanf("%d", &data[i]);
+	}
+	do {
+		ct = 0;
+		printf("찾을 숫자 입력 ");
+		scanf_s("%d", &a);
+		for (int t = 0; t < 10; t++) {
+			if (a == data[t]) {
+				printf("%d 번째에 저장되어 있습니다.\n", t + 1);
+				ct = ct + 1;
+			}
+			
+		}
+		if (ct == 0) printf("No exist!!!\n");
+	} while ((a != 0));
+ return 0;
+}
